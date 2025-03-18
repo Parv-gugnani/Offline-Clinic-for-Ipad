@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   viewport: {
     width: "device-width",
     initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
+    maximumScale: 5,
+    userScalable: true,
   },
 };
 
@@ -36,7 +36,18 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Beauty Clinic" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+
+        {/* iOS icons */}
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-192x192.png" />
+
+        {/* iOS splash screens */}
+        <link rel="apple-touch-startup-image" href="/icons/apple-touch-icon.png" />
+
+        {/* PWA color */}
+        <meta name="theme-color" content="#f8bbd0" />
       </head>
       <body className={inter.className}>
         {children}
@@ -45,9 +56,32 @@ export default function RootLayout({
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js');
+                  navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .then(function(registration) {
+                      console.log('Service Worker registered with scope:', registration.scope);
+                    })
+                    .catch(function(error) {
+                      console.error('Service Worker registration failed:', error);
+                    });
                 });
               }
+
+              // Check if the app is in standalone mode (installed)
+              if (window.matchMedia('(display-mode: standalone)').matches) {
+                console.log('App is running in standalone mode');
+                // You can add specific behavior for installed app here
+              }
+
+              // Handle offline/online events
+              window.addEventListener('online', function() {
+                console.log('App is online');
+                // You can add specific behavior for online state here
+              });
+
+              window.addEventListener('offline', function() {
+                console.log('App is offline');
+                // You can add specific behavior for offline state here
+              });
             `,
           }}
         />
