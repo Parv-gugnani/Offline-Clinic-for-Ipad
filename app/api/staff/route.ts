@@ -8,14 +8,7 @@ export async function GET() {
       include: {
         user: {
           select: {
-            id: true,
             name: true,
-            email: true,
-          },
-        },
-        services: {
-          include: {
-            service: true,
           },
         },
       },
@@ -35,7 +28,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, position, bio, serviceIds } = body;
+    const { userId, position } = body;
 
     // Validate required fields
     if (!userId || !position) {
@@ -45,43 +38,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if user exists
-    const userExists = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!userExists) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
     // Create staff member
     const staff = await prisma.staff.create({
       data: {
         userId,
         position,
-        bio,
-        services: {
-          create: serviceIds?.map((serviceId: string) => ({
-            serviceId,
-          })) || [],
-        },
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        services: {
-          include: {
-            service: true,
-          },
-        },
       },
     });
 

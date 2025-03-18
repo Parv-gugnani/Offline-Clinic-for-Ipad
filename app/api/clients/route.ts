@@ -1,28 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/src/lib/prisma';
 
-// GET /api/clients - Get all clients or filter by userId
-export async function GET(req: NextRequest) {
+// GET /api/clients - Get all clients
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
-
-    const where: {
-      userId?: string;
-    } = {};
-
-    if (userId) {
-      where.userId = userId;
-    }
-
     const clients = await prisma.client.findMany({
-      where,
       include: {
         user: {
           select: {
-            id: true,
             name: true,
-            email: true,
           },
         },
       },
@@ -42,44 +28,13 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, notes, phone, address, dateOfBirth } = body;
+    const { userId, phone } = body;
 
     // Validate required fields
-    if (!userId) {
+    if (!userId || !phone) {
       return NextResponse.json(
-        { error: 'User ID is required' },
+        { error: 'User ID and phone are required' },
         { status: 400 }
-      );
-    }
-
-    if (!phone) {
-      return NextResponse.json(
-        { error: 'Phone number is required' },
-        { status: 400 }
-      );
-    }
-
-    // Check if user exists
-    const userExists = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!userExists) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // Check if client already exists for this user
-    const existingClient = await prisma.client.findFirst({
-      where: { userId },
-    });
-
-    if (existingClient) {
-      return NextResponse.json(
-        { error: 'Client already exists for this user' },
-        { status: 409 }
       );
     }
 
@@ -88,18 +43,6 @@ export async function POST(req: NextRequest) {
       data: {
         userId,
         phone,
-        notes,
-        address,
-        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
       },
     });
 

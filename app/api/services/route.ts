@@ -4,24 +4,7 @@ import prisma from '@/src/lib/prisma';
 // GET /api/services - Get all services
 export async function GET() {
   try {
-    const services = await prisma.service.findMany({
-      include: {
-        staffServices: {
-          include: {
-            staff: {
-              include: {
-                user: {
-                  select: {
-                    name: true,
-                    email: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-    });
+    const services = await prisma.service.findMany();
 
     return NextResponse.json(services);
   } catch (error) {
@@ -37,7 +20,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, description, duration, price, category, image } = body;
+    const { name, duration, price } = body;
 
     // Validate required fields
     if (!name || !duration || !price) {
@@ -50,11 +33,8 @@ export async function POST(req: NextRequest) {
     const service = await prisma.service.create({
       data: {
         name,
-        description,
         duration: Number(duration),
         price: Number(price),
-        category,
-        image,
       },
     });
 

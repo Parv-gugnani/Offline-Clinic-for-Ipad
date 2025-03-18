@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "next build",
-  "devCommand": "next dev",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
   "installCommand": "npm install",
   "framework": "nextjs",
   "public": false
