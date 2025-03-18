@@ -1,0 +1,128 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          UserRole  @default(CLIENT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  client        Client?
+  staff         Staff?
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+  CLIENT
+}
+
+model Client {
+  id            String        @id @default(uuid())
+  userId        String        @unique
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone         String
+  address       String?
+  dateOfBirth   DateTime?
+  notes         String?
+  appointments  Appointment[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Staff {
+  id            String        @id @default(uuid())
+  userId        String        @unique
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  position      String
+  bio           String?
+  appointments  Appointment[]
+  services      StaffService[]
+  availability  Availability[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Service {
+  id            String        @id @default(uuid())
+  name          String
+  description   String?
+  duration      Int           // Duration in minutes
+  price         Float
+  image         String?       // URL to service image
+  category      String?       // e.g., "Facial", "Massage", "Hair", "Nails"
+  staffServices StaffService[]
+  appointments  Appointment[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model StaffService {
+  id            String        @id @default(uuid())
+  staffId       String
+  staff         Staff         @relation(fields: [staffId], references: [id])
+  serviceId     String
+  service       Service       @relation(fields: [serviceId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([staffId, serviceId])
+}
+
+model Appointment {
+  id            String        @id @default(uuid())
+  clientId      String
+  client        Client        @relation(fields: [clientId], references: [id])
+  staffId       String
+  staff         Staff         @relation(fields: [staffId], references: [id])
+  serviceId     String
+  service       Service       @relation(fields: [serviceId], references: [id])
+  date          DateTime
+  status        AppointmentStatus @default(PENDING)
+  notes         String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  syncStatus    SyncStatus    @default(SYNCED) // For offline functionality
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum SyncStatus {
+  SYNCED        // Data is synced with the server
+  PENDING_SYNC  // Created/modified offline, needs to be synced
+  SYNC_FAILED   // Failed to sync with the server
+}
+
+model Availability {
+  id            String        @id @default(uuid())
+  staffId       String
+  staff         Staff         @relation(fields: [staffId], references: [id])
+  dayOfWeek     Int           // 0-6 (Sunday-Saturday)
+  startTime     String        // Format: "HH:MM"
+  endTime       String        // Format: "HH:MM"
+  isAvailable   Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  syncStatus    SyncStatus    @default(SYNCED) // For offline functionality
+
+  @@unique([staffId, dayOfWeek, startTime, endTime])
+}
