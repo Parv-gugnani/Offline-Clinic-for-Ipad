@@ -23,8 +23,6 @@ export async function GET(req: NextRequest) {
             id: true,
             name: true,
             email: true,
-            phone: true,
-            address: true,
           },
         },
       },
@@ -44,12 +42,19 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, notes } = body;
+    const { userId, notes, phone, address, dateOfBirth } = body;
 
     // Validate required fields
     if (!userId) {
       return NextResponse.json(
         { error: 'User ID is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!phone) {
+      return NextResponse.json(
+        { error: 'Phone number is required' },
         { status: 400 }
       );
     }
@@ -82,7 +87,10 @@ export async function POST(req: NextRequest) {
     const client = await prisma.client.create({
       data: {
         userId,
+        phone,
         notes,
+        address,
+        dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
       },
       include: {
         user: {
@@ -90,8 +98,6 @@ export async function POST(req: NextRequest) {
             id: true,
             name: true,
             email: true,
-            phone: true,
-            address: true,
           },
         },
       },

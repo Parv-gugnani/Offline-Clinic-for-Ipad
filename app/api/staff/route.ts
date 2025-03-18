@@ -13,7 +13,7 @@ export async function GET() {
             email: true,
           },
         },
-        staffServices: {
+        services: {
           include: {
             service: true,
           },
@@ -35,12 +35,12 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, specialization, bio, serviceIds } = body;
+    const { userId, position, bio, serviceIds } = body;
 
     // Validate required fields
-    if (!userId || !specialization) {
+    if (!userId || !position) {
       return NextResponse.json(
-        { error: 'User ID and specialization are required' },
+        { error: 'User ID and position are required' },
         { status: 400 }
       );
     }
@@ -61,9 +61,9 @@ export async function POST(req: NextRequest) {
     const staff = await prisma.staff.create({
       data: {
         userId,
-        specialization,
+        position,
         bio,
-        staffServices: {
+        services: {
           create: serviceIds?.map((serviceId: string) => ({
             serviceId,
           })) || [],
@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
             email: true,
           },
         },
-        staffServices: {
+        services: {
           include: {
             service: true,
           },

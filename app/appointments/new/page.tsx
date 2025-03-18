@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 interface Service {
@@ -21,7 +21,8 @@ interface Staff {
   specialization: string;
 }
 
-export default function NewAppointmentPage() {
+// Create a client component that uses useSearchParams
+function AppointmentForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preSelectedServiceId = searchParams.get('serviceId');
@@ -211,9 +212,9 @@ export default function NewAppointmentPage() {
               required
             >
               <option value="">Select a staff member</option>
-              {staff.map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.user.name} - {member.specialization}
+              {staff.map((staffMember) => (
+                <option key={staffMember.id} value={staffMember.id}>
+                  {staffMember.user.name} - {staffMember.specialization}
                 </option>
               ))}
             </select>
@@ -239,27 +240,23 @@ export default function NewAppointmentPage() {
             <label htmlFor="time" className="block text-gray-700 font-medium mb-2">
               Time <span className="text-red-500">*</span>
             </label>
-            {selectedStaff && selectedDate ? (
-              availableTimeSlots.length > 0 ? (
-                <select
-                  id="time"
-                  value={selectedTime}
-                  onChange={(e) => setSelectedTime(e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-                  required
-                >
-                  <option value="">Select a time</option>
-                  {availableTimeSlots.map((timeSlot) => (
-                    <option key={timeSlot} value={timeSlot}>
-                      {timeSlot}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <p className="text-red-500">No available time slots for the selected date. Please choose another date.</p>
-              )
-            ) : (
-              <p className="text-gray-500">Please select a staff member and date first.</p>
+            <select
+              id="time"
+              value={selectedTime}
+              onChange={(e) => setSelectedTime(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+              required
+              disabled={!selectedStaff || !selectedDate || availableTimeSlots.length === 0}
+            >
+              <option value="">Select a time</option>
+              {availableTimeSlots.map((timeSlot) => (
+                <option key={timeSlot} value={timeSlot}>
+                  {timeSlot}
+                </option>
+              ))}
+            </select>
+            {selectedStaff && selectedDate && availableTimeSlots.length === 0 && (
+              <p className="mt-2 text-sm text-red-600">No available time slots for this date. Please select another date.</p>
             )}
           </div>
 
@@ -272,22 +269,53 @@ export default function NewAppointmentPage() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-              rows={3}
-              placeholder="Any special requests or information for your appointment"
+              rows={4}
+              placeholder="Any special requests or information for your appointment..."
             ></textarea>
           </div>
 
           <div className="flex justify-end">
             <button
               type="submit"
-              className="px-6 py-3 bg-pink-500 text-white rounded-md hover:bg-pink-600 transition-colors disabled:bg-pink-300"
               disabled={submitting}
+              className="px-6 py-3 bg-pink-600 text-white font-medium rounded-md shadow-md hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? 'Booking...' : 'Book Appointment'}
+              {submitting ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Processing...
+                </span>
+              ) : (
+                'Book Appointment'
+              )}
             </button>
           </div>
         </form>
       )}
     </div>
+  );
+}
+
+// Loading fallback for Suspense
+function LoadingFallback() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold text-pink-600 mb-8 text-center">Book an Appointment</h1>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
+      </div>
+    </div>
+  );
+}
+
+// Main page component that uses Suspense
+export default function NewAppointmentPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <AppointmentForm />
+    </Suspense>
   );
 }
